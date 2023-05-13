@@ -1,0 +1,16 @@
+#  vim: set et fenc=utf-8 ff=unix sts=2 sw=2 ts=2 :
+---
+- name: openwrt-get-debug-data | Write debug data
+  copy:
+    content: |
+      {{ {
+          'debug_facts': {
+            'openwrt__machine_name': openwrt__machine_name ,
+            'openwrt__cache_path': openwrt__cache_path,
+            'openwrt__distrib_id':  openwrt__distrib_id,
+            'openwrt__distrib_release': openwrt__distrib_release
+          }
+      } | to_nice_yaml(indent=2) }}
+    dest: "{{ ansible_root_dir }}/envs/{{ lookup('env', 'INVENTORY_NAME') }}/.debug"
+
+

@@ -1,0 +1,43 @@
+#!/bin/bash
+SCRIPT_PATH=`dirname $0`
+ABSOLUTE_PATH=`readlink -m ${SCRIPT_PATH}`
+ROOT_PATH=`readlink -m ${ABSOLUTE_PATH}/..`
+
+#set -o nounset -o pipefail -o errexit
+set \
+    -o nounset \
+    -o pipefail
+
+# Load all variables from .env and export them all for Ansible to read
+set -o allexport
+source "${ROOT_PATH}/.env"
+set +o allexport
+
+########################################################################
+INVENTORY_NAME=${INVENTORY_NAME:-localhost}
+INVENTORY_PATH=envs
+INVENTORY=${INVENTORY:-${INVENTORY_PATH}/${INVENTORY_NAME}/hosts.yml}
+PLAYBOOK_NAME="$1"
+
+FIRST_ARG_EXT=${PLAYBOOK_NAME##*.}
+
+
+if [ "xpy" == "x${FIRST_ARG_EXT}" ]; then
+    (
+    cd $ROOT_PATH &&                                                   \
+        source $ROOT_PATH/.python/bin/activate &&                      \
+        /usr/bin/env python3 "$@" &&                                   \
+        deactivate 'destructive'
+    )
+else
+    (
+    cd $ROOT_PATH &&                                                   \
+        source $ROOT_PATH/.python/bin/activate &&                      \
+        time                                                           \
+        ansible-playbook                                               \
+        -i ${INVENTORY}                                                \
+        -e ansible_root_dir="$(pwd)"                                   \
+        "$@" &&                                                        \
+        deactivate 'destructive'
+    )
+fi

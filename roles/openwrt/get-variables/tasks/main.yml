@@ -1,0 +1,44 @@
+#  vim: set et fenc=utf-8 ff=unix sts=2 sw=2 ts=2 :
+---
+- name: OpenWRT | Get machine name
+  shell: |-
+    ssh {{ openwrt__router.id }} \
+      "cat /proc/cpuinfo |
+      grep '^machine' |
+      sed 's/^machine[[:space:]]*:[[:space:]]//g' |
+      tr ' ' '_'"
+  register: openwrt__r_machine_name
+  delegate_to: localhost
+
+- name: OpenWRT | Get DISTRIB_ID
+  shell: |
+    ssh {{ openwrt__router.id }} \
+      'source /etc/openwrt_release && echo $DISTRIB_ID'
+  register: openwrt__r_distrib_id
+  delegate_to: localhost
+
+- name: OpenWRT | Get DISTRIB_RELEASE
+  shell: |
+    ssh {{ openwrt__router.id }} \
+      'source /etc/openwrt_release && echo $DISTRIB_RELEASE'
+  register: openwrt__r_distrib_release
+  delegate_to: localhost
+
+- block:
+  - set_fact:
+      openwrt__machine_name: "{{ openwrt__r_machine_name.stdout }}"
+  - set_fact:
+      openwrt__cache_path: "{{ configure__cache_dir }}/openwrt/{{ openwrt__machine_name.split('/')[0] }}"
+  when: openwrt__r_machine_name.rc == 0
+
+- set_fact:
+    openwrt__distrib_id: "{{ openwrt__r_distrib_id.stdout }}"
+
+- set_fact:
+    openwrt__distrib_release: "{{ openwrt__r_distrib_release.stdout }}"
+  when: openwrt__distrib_release is not defined
+
+#- debug: msg="openwrt__distrib_release = {{ openwrt__distrib_release }}"
+#- debug:
+    #msg: "openwrt__cache_path    = {{ openwrt__cache_path }}"
+#- fail: msg='DEBUG'

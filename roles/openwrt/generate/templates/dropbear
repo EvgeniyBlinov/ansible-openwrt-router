@@ -1,0 +1,10 @@
+# vim: set noet ci pi sts=0 sw=4 ts=4 :
+# {{ ansible_managed }}
+
+config dropbear
+	option PasswordAuth '{{ "on" if ( openwrt__ssh_password| bool ) else "off" }}'
+	option Port '{{ openwrt__ssh_port }}'
+	option RootPasswordAuth 'off'
+{% if not openwrt__dropbear_wan | bool %}
+	option Interface '{{ openwrt__ssh_interface }}'
+{% endif %}

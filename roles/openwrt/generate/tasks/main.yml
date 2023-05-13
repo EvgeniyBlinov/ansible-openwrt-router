@@ -1,0 +1,24 @@
+#  vim: set et fenc=utf-8 ff=unix sts=2 sw=2 ts=2 :
+---
+- name: OpenWRT | Set fact __openwrt__network_lan_ip
+  set_fact:
+    __openwrt__network_lan_ip: "{%- if openwrt__router is defined and openwrt__router.ip is defined -%}
+        {{ openwrt__router.ip | default('192.168.1.1') }}
+        {%- endif -%}"
+  tags: always
+
+- name: OpenWRT | Set fact openwrt__network_lan
+  set_fact:
+    openwrt__network_lan: "{{
+      openwrt__network_lan | combine({ 'ip': __openwrt__network_lan_ip })
+    }}"
+  when: openwrt__network_lan.ip is not defined
+  tags: always
+
+- name: OpenWRT | Prepare generator
+  include_tasks: prepare_generator.yml
+  tags: always
+
+- name: OpenWRT | Generate configs
+  include_tasks: generate_configs.yml
+  tags: always

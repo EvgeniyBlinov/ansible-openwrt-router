@@ -1,0 +1,46 @@
+#  vim: set et fenc=utf-8 ff=unix sts=2 sw=2 ts=2 :
+---
+openwrt__config_path: "{{ generator__path }}/openwrt/etc/config"
+openwrt__cache_path: "{{ configure__cache_dir }}/openwrt"
+
+openwrt__ssh_password: false
+openwrt__ssh_port: 22
+openwrt__ssh_interface: lan
+
+openwrt__firewall__wan_network: wan
+
+openwrt__network_lan:
+  ip: "{%- if openwrt__router is defined and openwrt__router.ip is defined -%}
+    {{ openwrt__router.ip | default('192.168.1.1') }}
+    {%- endif -%}"
+  ifname: eth0.1
+
+openwrt__network_wan:
+  ifname: eth1
+  proto: dhcp
+  ## Set MAC address if needed
+  #clientid: '1E:1E:1E:1E:A0:01'
+  #vendorid: '1E:1E:1E:1E:A0:01'
+  #macaddr: '1E:1E:1E:1E:A0:01'
+
+openwrt__network_dns: 8.8.8.8
+openwrt__dns_servers:
+  - 8.8.8.8
+  - 8.8.4.4
+
+hosts__local_env_hosts: []
+
+openwrt__network_ula_prefix: 'fd00:db80::/48'
+
+openwrt__network: {}
+
+#openwrt__diag_dns: 'lede-project.org'
+openwrt__diag_dns: 'ya.ru'
+
+openwrt__uhttpd_listen_http: 80
+openwrt__uhttpd_disabled: 0
+openwrt__dropbear_disabled: 0
+openwrt__dropbear_wan: 0
+
+openwrt__wireless_disabled: 0
+openwrt__wireless_deny_list: []

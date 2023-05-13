@@ -1,0 +1,39 @@
+#  vim: set et fenc=utf-8 ff=unix sts=2 sw=2 ts=2 :
+---
+- name: >-
+    OpenWRT | Network | Apply changes
+    {% if openwrt__origin_config_dir is defined %}
+    {{ openwrt__config_path }}/network
+    {% else %}
+    {{ openwrt__cache_path }}/etc/config/network
+    {% endif %}
+  shell: >-
+    {{ ansible_root_dir }}/bin/uci_apply.py
+    -o uci
+    {% if openwrt__origin_config_dir is defined %}
+    -f {{ openwrt__config_path }}/network
+    {% else %}
+    -f {{ openwrt__cache_path }}/etc/config/network
+    {% endif %}
+    -a '{{ openwrt__network_override | to_json }}' >
+    {{ openwrt__config_path }}/network.tmp
+  args:
+    executable: /bin/bash
+  tags:
+    - network
+
+- name: OpenWRT | Move network.tmp to network
+  ansible.builtin.copy:
+    src: "{{ openwrt__config_path }}/network.tmp"
+    dest: "{{ openwrt__config_path }}/network"
+  delegate_to: localhost
+  tags:
+    - network
+
+- name: OpenWRT | Remove network.tmp
+  ansible.builtin.file:
+    path: "{{ openwrt__config_path }}/network.tmp"
+    state: absent
+  delegate_to: localhost
+  tags:
+    - network

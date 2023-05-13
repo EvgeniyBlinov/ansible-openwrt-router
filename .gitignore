@@ -1,0 +1,10 @@
+/tmp
+.certs/
+.env
+/.cache
+envs/*
+!envs/local
+#envs/**/host_vars/*
+#envs/**/.secrets
+/secrets
+/.python

@@ -1,0 +1,20 @@
+#  vim: set et fenc=utf-8 ff=unix sts=2 sw=2 ts=2 :
+---
+- name: Include secrets
+  include_vars: "{{ item }}"
+  with_first_found:
+    - files:
+      - "secrets/{{ deployment_instance_id }}.yml"
+      - "{{ inventory_dir }}/.secrets/{{ deployment_instance_id }}.yml"
+      skip: true
+
+- name: Clear cache
+  file:
+    path: "{{ configure__cache_dir }}"
+    state: absent
+
+- name: Ensure cache directory is exists
+  file:
+    path: "{{ configure__cache_dir }}"
+    recurse: yes
+    force: yes

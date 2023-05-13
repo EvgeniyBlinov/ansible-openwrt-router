@@ -1,0 +1,12 @@
+#  vim: set et fenc=utf-8 ff=unix sts=2 sw=2 ts=2 :
+---
+- name: Generate dirs
+  file:
+    path: "{{ generator__path }}"
+    state: absent
+
+- name: Generate dirs
+  file:
+    path: "{{ generator__path }}"
+    recurse: yes
+    force: yes

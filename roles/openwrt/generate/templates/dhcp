@@ -1,0 +1,85 @@
+# vim: set noet ci pi sts=0 sw=4 ts=4 :
+# {{ ansible_managed }}
+# LAN
+#  comp: 1**
+# WAN
+#  comp: 2**
+#  phone: 23*
+########################################################################
+
+config dnsmasq
+	option domainneeded '1'
+	option boguspriv '1'
+	option localise_queries '1'
+	option rebind_protection '{{ openwrt__dhcp__dnsmasq__rebind_protection }}'
+	option rebind_localhost '1'
+	option local '/lan/'
+	option domain 'lan'
+	option expandhosts '1'
+	option authoritative '1'
+	option readethers '1'
+	option leasefile '/tmp/dhcp.leases'
+{% if openwrt__distrib_release is version('21.02.0', '>=') %}
+	option resolvfile '/tmp/resolv.conf.d/resolv.conf.auto'
+{% else %}
+	option resolvfile '/tmp/resolv.conf.auto'
+	option loglevel '4'
+{% endif %}
+	option localservice '1'
+{% if openwrt__distrib_release is version('17.01.4', '>=') %}
+	option filterwin2k '0'
+	option nonegcache '0'
+	option nonwildcard '1'
+{% endif %}
+	{# @TODO
+	{%- if openwrt__dns_servers %}
+	{%- for dns_server in openwrt__dns_servers %}
+	list server '{{ dns_server }}'
+	{% endfor %}
+	{% endif %}
+	#}
+
+config dhcp 'lan'
+	option interface 'lan'
+	option start '100'
+	option limit '150'
+	option leasetime '12h'
+	option dhcpv6 'server'
+	option ra 'server'
+	##RA management mode
+	##0: no M-Flag but A-Flag
+	##1: both M and A 
+	##2: M but not A
+	##A-Flag: tell client to use auto-configuration i.e. SLAAC
+	##M-Flag: notify client that DHCPv6 server is available
+	#option ra_management '1'
+	{%- if openwrt__dhcp_lan_dhcp_option | default(False) %}
+	option dhcp_option '{{ openwrt__dhcp_lan_dhcp_option }}'
+	{% endif %}
+
+config dhcp 'wan'
+	option interface 'wan'
+	option ignore '1'
+
+config odhcpd 'odhcpd'
+	option maindhcp '0'
+	option leasefile '/tmp/hosts/odhcpd'
+	option leasetrigger '/usr/sbin/odhcpd-update'
+{% if openwrt__distrib_release is version('17.01.4', '>=') %}
+	option loglevel '4'
+{% endif %}
+
+{{ "\n" }}
+{%- if hosts__local_env_hosts is defined -%}
+  {%- for host in hosts__local_env_hosts -%}
+    {%- if host.mac is defined -%}
+config host
+{{ "\t" }}option name '{{ host.id }}'
+{{ "\t" }}option mac  '{{ host.mac }}'
+{{ "\t" }}option ip   '{{ host.ip }}'
+{{ "\n" }}
+    {%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+{{ "\n" }}
+

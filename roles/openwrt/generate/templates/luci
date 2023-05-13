@@ -1,0 +1,44 @@
+# vim: set noet ci pi sts=0 sw=4 ts=4 :
+# {{ ansible_managed }}
+
+config core 'main'
+	option lang 'auto'
+	option mediaurlbase '/luci-static/bootstrap'
+	option resourcebase '/luci-static/resources'
+
+config extern 'flash_keep'
+	option uci '/etc/config/'
+	option dropbear '/etc/dropbear/'
+	option openvpn '/etc/openvpn/'
+	option passwd '/etc/passwd'
+	option opkg '/etc/opkg.conf'
+	option firewall '/etc/firewall.user'
+	option uploads '/lib/uci/upload/'
+
+config internal 'languages'
+
+config internal 'sauth'
+	option sessionpath '/tmp/luci-sessions'
+	option sessiontime '3600'
+
+config internal 'ccache'
+	option enable '1'
+
+config internal 'themes'
+	option Bootstrap '/luci-static/bootstrap'
+
+{% if openwrt__distrib_release is version('17.01.4', '>=') %}
+config internal 'apply'
+{% if openwrt__distrib_release is version('19.07.3', '>=') %}
+	option ubuspath '/ubus/'
+{% endif %}
+	option rollback {{ '90' if openwrt__distrib_release is version('19.07.3', '>=') else '30' }}
+	option holdoff '4'
+	option timeout '5'
+	option display '1.5'
+{% endif %}
+
+config internal 'diag'
+	option dns '{{ openwrt__diag_dns }}'
+	option ping '{{ openwrt__diag_dns }}'
+	option route '{{ openwrt__diag_dns }}'

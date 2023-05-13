@@ -1,0 +1,9 @@
+#  vim: set et fenc=utf-8 ff=unix sts=2 sw=2 ts=2 :
+---
+- name: openwrt-fetch-configs | Fetch origin configs
+  ## https://github.com/openwrt/openwrt/issues/9889
+  shell: |
+    scp -O \
+      -r \
+      {{ openwrt__router.id }}:/etc/config \
+      {{ openwrt__origin_config_dir }}/config

@@ -1,0 +1,70 @@
+#  vim: set et fenc=utf-8 ff=unix sts=2 sw=2 ts=2 :
+---
+- name: OpenWRT | Generate configs
+  template:
+    src: "{{ item }}"
+    dest: "{{ openwrt__config_path }}/{{ item }}"
+  with_items:
+    - dhcp
+    - dropbear
+    - firewall
+    - luci
+    - uhttpd
+
+- name: OpenWRT | Get version parts
+  set_fact:
+    openwrt__distrib_release_major: >-
+      {{ openwrt__distrib_release.split('.')[0] }}
+    openwrt__distrib_release_minor: >-
+      {{ openwrt__distrib_release.split('.')[1] }}
+    openwrt__distrib_release_patch: >-
+      {{ openwrt__distrib_release.split('.')[2] }}
+  tags:
+    - network
+
+###################  NETWORK   ########################################
+- name: OpenWRT | Copy original network config
+  ansible.builtin.copy:
+    src: "{{ openwrt__origin_config_dir }}/config/network"
+    dest: "{{ openwrt__config_path }}/network"
+  delegate_to: localhost
+  tags:
+    - network
+
+- name: OpenWRT | Generate network if openwrt__distrib_release <= 18.06.1
+  include_tasks: generate_network.yml
+  vars:
+    openwrt__network_override: "{{ openwrt__network_override__part_le_18061 }}"
+  when: openwrt__distrib_release is version('18.06.1', '<=')
+  tags:
+    - network
+
+- name: OpenWRT | Generate network
+  include_tasks: generate_network.yml
+  tags:
+    - network
+###################  NETWORK   ########################################
+#
+###################  WIRELESS  ########################################
+- name: >-
+    OpenWRT | Wireless | Apply changes
+    {% if openwrt__origin_config_dir is defined %}
+    {{ openwrt__origin_config_dir }}/config/wireless
+    {% else %}
+    {{ openwrt__cache_path }}/etc/config/wireless
+    {% endif %}
+  shell: >-
+    {{ ansible_root_dir }}/bin/uci_apply.py
+    -o uci
+    {% if openwrt__origin_config_dir is defined %}
+    -f {{ openwrt__origin_config_dir }}/config/wireless
+    {% else %}
+    -f {{ openwrt__cache_path }}/etc/config/wireless
+    {% endif %}
+    -a '{{ openwrt__wireless_override | to_json }}' >
+    {{ openwrt__config_path }}/wireless
+  args:
+    executable: /bin/bash
+  tags:
+    - wireless
+###################  WIRELESS  ########################################

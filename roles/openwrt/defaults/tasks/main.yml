@@ -1,0 +1,40 @@
+#  vim: set et fenc=utf-8 ff=unix sts=2 sw=2 ts=2 :
+---
+- name: openwrt-defaults | Get variables
+  include_role:
+    name: openwrt/get-variables
+  when: not (
+      ( lookup('env', 'DEBUG') | default(False) ) | bool
+    )
+
+- block:
+  - name: openwrt-defaults | Load debug data
+    include_vars: "{{ item }}"
+    with_first_found:
+      - files:
+        - "{{ ansible_root_dir }}/envs/{{ lookup('env', 'INVENTORY_NAME') }}/.debug"
+        #skip: true
+
+  - block:
+    - set_fact:
+        openwrt__machine_name: "{{ debug_facts.openwrt__machine_name }}"
+        openwrt__cache_path: "{{ debug_facts.openwrt__cache_path }}"
+        openwrt__distrib_id: "{{ debug_facts.openwrt__distrib_id }}"
+    - set_fact:
+        openwrt__distrib_release: "{{ debug_facts.openwrt__distrib_release }}"
+      when: openwrt__distrib_release is not defined
+    when: debug_facts is defined
+
+  - fail: msg='Run openwrt/get-debug-data before for DEBUG'
+    when: debug_facts is not defined
+
+  when: (
+      ( lookup('env', 'DEBUG') | default(False) ) | bool
+    )
+
+- debug:
+    msg:
+      - "openwrt__machine_name    = {{ openwrt__machine_name    }}"
+      - "openwrt__cache_path      = {{ openwrt__cache_path      }}"
+      - "openwrt__distrib_id      = {{ openwrt__distrib_id      }}"
+      - "openwrt__distrib_release = {{ openwrt__distrib_release }}"

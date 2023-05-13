@@ -1,0 +1,64 @@
+#  vim: set et fenc=utf-8 ff=unix sts=2 sw=2 ts=2 :
+---
+- name: OpenWRT | Upload configs
+  ## https://github.com/openwrt/openwrt/issues/9889
+  shell: |
+    scp -O \
+      -r \
+      {{ openwrt__config_path }} \
+      {{ openwrt__router.id }}:/etc
+
+- name: OpenWRT | Run router commands
+  block:
+
+  #- name: OpenWRT | Run configure wifi device
+    #raw: |
+      #uci set wireless.@wifi-device[0].disabled={{ openwrt__wireless_disabled | default('0') }}
+
+    #@TODO blinov 2018-09-24: fix EOF
+  - name: OpenWRT | Configure /etc/sysctl.conf
+    raw: |
+      cat <<- EOF |sed '/^\s*EOF\s*$/d' > /etc/sysctl.conf
+      # Defaults are configured in /etc/sysctl.d/* and can be customized in this file
+      net.ipv6.conf.all.disable_ipv6 = 1
+      net.ipv6.conf.default.disable_ipv6 = 1
+      net.ipv6.conf.lo.disable_ipv6 = 1
+      #net.ipv6.conf.eth0.disable_ipv6 = 1
+      #net.ipv6.conf.eth1.disable_ipv6 = 1
+      #net.ipv6.conf.wlan0.disable_ipv6 = 1
+      #net.ipv6.conf.br-lan.disable_ipv6 = 1
+      EOF
+
+    #@TODO blinov 2018-09-24: fix EOF
+  - name: OpenWRT | Configure /etc/rc.local
+    raw: |
+      cat <<- EOF |sed '/^\s*EOF\s*$/d' > /etc/rc.local
+      # Put your custom commands here that should be executed once
+      # the system init finished. By default this file does nothing.
+
+      echo 1 > /proc/sys/net/ipv6/conf/all/disable_ipv6
+      exit 0
+      EOF
+
+  - name: OpenWRT | Run uci commit
+    raw: |
+      uci commit
+    when: openwrt__apply__commit | bool
+
+    #@TODO blinov 2018-09-24: fix EOF
+  - name: OpenWRT | Restart services
+    raw: |
+      cat <<- EOF | sed '/^\s*EOF\s*$/d' |/bin/ash
+      /etc/init.d/odhcpd restart
+      /etc/init.d/dropbear {% if openwrt__dropbear_disabled | bool %}stop{% else %}restart{% endif %}
+      /etc/init.d/uhttpd   {% if openwrt__uhttpd_disabled | bool %}stop{% else %}restart{% endif %}
+      /etc/init.d/firewall restart
+      /etc/init.d/network restart
+      EOF
+    when: openwrt__apply__restart | bool
+
+  - name: OpenWRT | Disable ipv6 in runtime
+    raw: |
+      echo 1 > /proc/sys/net/ipv6/conf/all/disable_ipv6
+
+  delegate_to: "{{ groups.routers[0] }}"

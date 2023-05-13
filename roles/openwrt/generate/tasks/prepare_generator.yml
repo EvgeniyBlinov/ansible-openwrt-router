@@ -1,0 +1,30 @@
+#  vim: set et fenc=utf-8 ff=unix sts=2 sw=2 ts=2 :
+---
+- name: OpenWRT | Clear direcotries
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ openwrt__config_path }}"
+    - "{{ openwrt__cache_path }}"
+
+- name: OpenWRT | Ensure direcotries are exists
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ openwrt__config_path }}"
+    - "{{ openwrt__cache_path }}"
+    - "{{ openwrt__cache_path }}/etc/config"
+  tags: always
+
+  # fetch by ssh_config
+- name: OpenWRT | Fetch configs
+  ## https://github.com/openwrt/openwrt/issues/9889
+  shell: |
+    scp -O \
+      -r \
+      {{ openwrt__router.id }}:/etc/config \
+      {{ openwrt__cache_path }}/etc
+  when: openwrt__fetch_configs
